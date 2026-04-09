@@ -1,0 +1,19 @@
+---
+description: Restrict new code locations under Assets/src
+alwaysApply: true
+---
+
+# Assets/src 目录规范
+
+- 仅允许在 `Assets/src` 目录内新增代码文件或新增代码目录。
+- 不要在 `Assets/src` 之外创建新的业务代码、编辑器代码、脚本代码或功能模块文件。
+- 编辑器相关代码必须放在 `Assets/src/Editor` 或其子目录下。
+- 业务代码必须放在 `Assets/src/Script` 或其子目录下。
+- 允许在 `Assets/src/Editor` 与 `Assets/src/Script` 下按功能新建分类子文件夹。
+- 若需求涉及新增代码但目标位置不符合以上规范，应先调整到 `Assets/src` 目录结构内再实现。
+
+# 示例
+
+- 编辑器扩展：`Assets/src/Editor/Tools/MyWindow.cs`
+- 业务脚本：`Assets/src/Script/UI/MainMenuController.cs`
+- 不允许：`Assets/Scripts/NewFeature.cs`

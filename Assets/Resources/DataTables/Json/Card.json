@@ -1,0 +1,6 @@
+{
+  "tableName": "Card",
+  "rows": [
+    {"id": 1, "name": "普通卡牌", "quality": 1}
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "tableName": "CardAttr",
+  "rows": [
+    {"id": 1, "name": "普通卡牌", "attack": 100}
+  ]
+}
