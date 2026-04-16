@@ -1,0 +1,366 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using UnityEditor;
+using UnityEngine;
+
+namespace Mini3.Editor.UI
+{
+    /// <summary>
+    /// 生成 UI 路径注册表与单类 UI 脚本。
+    /// </summary>
+    public static class UICodeGenerator
+    {
+        private const string UIPathRegistryFile = "Assets/src/Script/UI/Config/UIPathRegistry.Generated.cs";
+        private const string UIScriptRoot = "Assets/src/Script/UI";
+
+        public static bool GenerateResourceRegistry(out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (!UIResourceNameValidator.TryCollectResources(out Dictionary<string, string> uiPaths, out Dictionary<string, string> imagePaths, out errorMessage))
+            {
+                return false;
+            }
+
+            string content = GenerateRegistryContent(uiPaths, imagePaths);
+            WriteAllText(UIPathRegistryFile, content);
+            AssetDatabase.Refresh();
+            return true;
+        }
+
+        public static bool GenerateUIScript(UIWidget uiWidget, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (uiWidget == null)
+            {
+                errorMessage = "UIWidget is null.";
+                return false;
+            }
+
+            if (!UIBindingScanner.TryScan(uiWidget, out List<UIBindData> bindings, out errorMessage))
+            {
+                return false;
+            }
+
+            string moduleName = string.IsNullOrWhiteSpace(uiWidget.ModuleName) ? "Common" : uiWidget.ModuleName;
+            string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
+            bool isView = UIBindingScanner.IsViewName(uiName);
+            string targetDirectory = $"{UIScriptRoot}/{moduleName}/{uiName}";
+            string targetFilePath = $"{targetDirectory}/{uiName}.cs";
+
+            if (isView)
+            {
+                UIFormDefine.Register(new UIFormConfig(uiName, uiName, UIGroupName.Normal, false, 0));
+            }
+
+            EnsureDirectory(targetDirectory);
+            string content = GenerateUIScriptContent(moduleName, uiName, bindings, isView);
+            WriteAllText(targetFilePath, content);
+            AssetDatabase.Refresh();
+            return true;
+        }
+
+        private static string GenerateRegistryContent(IReadOnlyDictionary<string, string> uiPaths, IReadOnlyDictionary<string, string> imagePaths)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("using System;");
+            builder.AppendLine();
+            builder.AppendLine("namespace Mini3");
+            builder.AppendLine("{");
+            builder.AppendLine("    /// <summary>");
+            builder.AppendLine("    /// 编辑器自动生成的 Resources 资源注册表。");
+            builder.AppendLine("    /// </summary>");
+            builder.AppendLine("    public static partial class UIPathRegistry");
+            builder.AppendLine("    {");
+            builder.AppendLine("        static UIPathRegistry()");
+            builder.AppendLine("        {");
+
+            foreach (KeyValuePair<string, string> pair in uiPaths)
+            {
+                builder.AppendFormat("            RegisterUI(\"{0}\", \"{1}\");", Escape(pair.Key), Escape(pair.Value)).AppendLine();
+            }
+
+            foreach (KeyValuePair<string, string> pair in imagePaths)
+            {
+                builder.AppendFormat("            RegisterImage(\"{0}\", \"{1}\");", Escape(pair.Key), Escape(pair.Value)).AppendLine();
+            }
+
+            builder.AppendLine("        }");
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            return builder.ToString();
+        }
+
+        private static string GenerateUIScriptContent(string moduleName, string uiName, IReadOnlyList<UIBindData> bindings, bool isView)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("using UnityEngine;");
+            builder.AppendLine("using UnityEngine.UI;");
+            builder.AppendLine();
+            builder.AppendFormat("namespace Mini3.UI.{0}", moduleName).AppendLine();
+            builder.AppendLine("{");
+            builder.AppendFormat("    public sealed class {0} : {1}", uiName, isView ? "BaseUI" : "BaseItem").AppendLine();
+            builder.AppendLine("    {");
+
+            AppendFieldDeclarations(builder, bindings);
+
+            if (!isView)
+            {
+                builder.AppendLine();
+                builder.AppendFormat("        public {0}(GameObject root) : base(root)", uiName).AppendLine();
+                builder.AppendLine("        {");
+                builder.AppendLine("        }");
+            }
+
+            if (bindings.Count > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.AppendLine("        protected override void BindComponents()");
+            builder.AppendLine("        {");
+            builder.AppendLine("            base.BindComponents();");
+            AppendBindStatements(builder, bindings);
+            builder.AppendLine("        }");
+            builder.AppendLine();
+
+            builder.AppendLine("        protected override void BindEvents()");
+            builder.AppendLine("        {");
+            builder.AppendLine("            base.BindEvents();");
+            AppendButtonStatements(builder, bindings, true);
+            builder.AppendLine("        }");
+            builder.AppendLine();
+
+            builder.AppendLine("        protected override void UnbindEvents()");
+            builder.AppendLine("        {");
+            AppendButtonStatements(builder, bindings, false);
+            AppendItemDisposeStatements(builder, bindings);
+            builder.AppendLine("            base.UnbindEvents();");
+            builder.AppendLine("        }");
+            builder.AppendLine();
+
+            if (isView)
+            {
+                builder.AppendLine();
+                builder.AppendLine("        protected override void OnOpenUI(object userData)");
+                builder.AppendLine("        {");
+                builder.AppendLine("            base.OnOpenUI(userData);");
+                builder.AppendLine("        }");
+                builder.AppendLine();
+                builder.AppendLine("        protected override void OnCloseUI(bool isShutdown, object userData)");
+                builder.AppendLine("        {");
+                builder.AppendLine("            base.OnCloseUI(isShutdown, userData);");
+                builder.AppendLine("        }");
+                builder.AppendLine();
+            }
+
+            builder.AppendLine("        protected override void RefreshView()");
+            builder.AppendLine("        {");
+            builder.AppendLine("            base.RefreshView();");
+            builder.AppendLine("        }");
+
+            AppendButtonHandlers(builder, bindings);
+
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            return builder.ToString();
+        }
+
+        private static void AppendFieldDeclarations(StringBuilder builder, IReadOnlyList<UIBindData> bindings)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                UIBindData binding = bindings[i];
+                builder.AppendFormat("        private {0} {1};", GetFieldTypeName(binding), binding.FieldName).AppendLine();
+                if (binding.BindType == UIBindType.Item)
+                {
+                    builder.AppendFormat("        private {0} {1};", binding.WidgetTypeName, GetItemInstanceFieldName(binding)).AppendLine();
+                }
+            }
+        }
+
+        private static void AppendBindStatements(StringBuilder builder, IReadOnlyList<UIBindData> bindings)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                UIBindData binding = bindings[i];
+                builder.AppendFormat("            {0} = {1};", binding.FieldName, GenerateBindExpression(binding)).AppendLine();
+                if (binding.BindType == UIBindType.Item)
+                {
+                    builder.AppendFormat("            {0} = {1} != null ? new {2}({1}) : null;", GetItemInstanceFieldName(binding), binding.FieldName, binding.WidgetTypeName).AppendLine();
+                }
+            }
+        }
+
+        private static void AppendButtonStatements(StringBuilder builder, IReadOnlyList<UIBindData> bindings, bool isAdd)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                UIBindData binding = bindings[i];
+                if (binding.BindType != UIBindType.Button)
+                {
+                    continue;
+                }
+
+                builder.AppendFormat("            if ({0} != null)", binding.FieldName).AppendLine();
+                builder.AppendLine("            {");
+                builder.AppendFormat(
+                    "                {0}.onClick.{1}(On{2}Click);",
+                    binding.FieldName,
+                    isAdd ? "AddListener" : "RemoveListener",
+                    ToMethodSuffix(binding.NodeName)).AppendLine();
+                builder.AppendLine("            }");
+            }
+        }
+
+        private static void AppendItemDisposeStatements(StringBuilder builder, IReadOnlyList<UIBindData> bindings)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                UIBindData binding = bindings[i];
+                if (binding.BindType != UIBindType.Item)
+                {
+                    continue;
+                }
+
+                string instanceFieldName = GetItemInstanceFieldName(binding);
+                builder.AppendFormat("            if ({0} != null)", instanceFieldName).AppendLine();
+                builder.AppendLine("            {");
+                builder.AppendFormat("                {0}.Dispose();", instanceFieldName).AppendLine();
+                builder.AppendFormat("                {0} = null;", instanceFieldName).AppendLine();
+                builder.AppendLine("            }");
+            }
+        }
+
+        private static void AppendButtonHandlers(StringBuilder builder, IReadOnlyList<UIBindData> bindings)
+        {
+            bool hasButton = false;
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                UIBindData binding = bindings[i];
+                if (binding.BindType != UIBindType.Button)
+                {
+                    continue;
+                }
+
+                hasButton = true;
+                builder.AppendLine();
+                builder.AppendFormat("        private void On{0}Click()", ToMethodSuffix(binding.NodeName)).AppendLine();
+                builder.AppendLine("        {");
+                builder.AppendLine("        }");
+            }
+
+            if (!hasButton)
+            {
+                builder.AppendLine();
+            }
+        }
+
+        private static string GenerateBindExpression(UIBindData binding)
+        {
+            switch (binding.BindType)
+            {
+                case UIBindType.GameObject:
+                    return $"FindGameObject(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.Transform:
+                    return $"CachedTransform.Find(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.Text:
+                    return $"FindComponent<Text>(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.Image:
+                    return $"FindComponent<Image>(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.RawImage:
+                    return $"FindComponent<RawImage>(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.Button:
+                    return $"FindComponent<Button>(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.Item:
+                    return $"FindGameObject(\"{Escape(binding.RelativePath)}\")";
+                default:
+                    return "null";
+            }
+        }
+
+        private static string GetFieldTypeName(UIBindData binding)
+        {
+            switch (binding.BindType)
+            {
+                case UIBindType.GameObject:
+                    return "GameObject";
+                case UIBindType.Transform:
+                    return "Transform";
+                case UIBindType.Text:
+                    return "Text";
+                case UIBindType.Image:
+                    return "Image";
+                case UIBindType.RawImage:
+                    return "RawImage";
+                case UIBindType.Button:
+                    return "Button";
+                case UIBindType.Item:
+                    return "GameObject";
+                default:
+                    return "Component";
+            }
+        }
+
+        private static string GetItemInstanceFieldName(UIBindData binding)
+        {
+            string fieldName = binding.FieldName;
+            if (fieldName.EndsWith("Go", StringComparison.Ordinal))
+            {
+                fieldName = fieldName.Substring(0, fieldName.Length - 2);
+            }
+
+            return fieldName;
+        }
+
+        private static string ToMethodSuffix(string nodeName)
+        {
+            string fieldName = UIBindingScanner.ToMemberName(nodeName);
+            if (fieldName.StartsWith("m_", StringComparison.Ordinal))
+            {
+                fieldName = fieldName.Substring(2);
+            }
+
+            if (fieldName.Length == 0)
+            {
+                return "Button";
+            }
+
+            return char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
+        }
+
+        private static string Escape(string value)
+        {
+            return string.IsNullOrEmpty(value) ? string.Empty : value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static void EnsureDirectory(string assetDirectoryPath)
+        {
+            string[] parts = assetDirectoryPath.Split('/');
+            string current = parts[0];
+            for (int i = 1; i < parts.Length; i++)
+            {
+                string next = $"{current}/{parts[i]}";
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    AssetDatabase.CreateFolder(current, parts[i]);
+                }
+
+                current = next;
+            }
+        }
+
+        private static void WriteAllText(string assetPath, string content)
+        {
+            string fullPath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
+            string directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(fullPath, content, Encoding.UTF8);
+        }
+    }
+}

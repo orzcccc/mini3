@@ -53,6 +53,12 @@ namespace Mini3
                 return false;
             }
 
+            if (GameEntry.GetComponent<UIComponent>() == null)
+            {
+                Debug.LogError("GameLauncher 启动失败：未找到 UIComponent，请确认 GameFramework prefab 配置完整。");
+                return false;
+            }
+
             return true;
         }
 
@@ -60,12 +66,13 @@ namespace Mini3
         {
             int loadedTableCount = TableMgr.inst.LoadAll();
             EventMgr.inst.SetDefaultHandler(OnDefaultGameEvent);
+            ResMgr.inst.RebuildRegistry();
             Debug.Log($"GameLauncher 初始化完成，已加载数据表数量: {loadedTableCount}");
         }
 
         private static void InitGameModules()
         {
-            // TODO: 在这里继续初始化 MVC、ECS、UI、事件系统等业务模块。
+            _ = UIMgr.inst;
         }
 
         private static void OnDefaultGameEvent(object sender, GameEventArgs e)
