@@ -12,16 +12,15 @@ namespace Mini3.Editor.UI
     public static class UIResourceNameValidator
     {
         private const string ResourcesRoot = "Assets/Resources";
-        private const string UIRoot = "Assets/Resources/UI";
         private const string ImageRoot = "Assets/Resources/Image";
 
-        public static bool TryCollectResources(out Dictionary<string, string> uiPaths, out Dictionary<string, string> imagePaths, out string errorMessage)
+        public static bool TryCollectResources(out Dictionary<string, string> prefabPaths, out Dictionary<string, string> imagePaths, out string errorMessage)
         {
-            uiPaths = new Dictionary<string, string>(StringComparer.Ordinal);
+            prefabPaths = new Dictionary<string, string>(StringComparer.Ordinal);
             imagePaths = new Dictionary<string, string>(StringComparer.Ordinal);
             errorMessage = string.Empty;
 
-            if (!CollectResourceMap("t:Prefab", UIRoot, uiPaths, out errorMessage))
+            if (!CollectResourceMap("t:Prefab", ResourcesRoot, prefabPaths, out errorMessage))
             {
                 return false;
             }

@@ -11,12 +11,29 @@ namespace Mini3
     /// </summary>
     public sealed class UIMgr : Singleton<UIMgr>
     {
+        private const string UICanvasAssetName = "UICanvas";
+        private const string UIRootNodeName = "UIRoot";
+        private const string LowLayerNodeName = "LowLayer";
+        private const string MainLayerNodeName = "MainLayer";
+        private const string MiddleLayerNodeName = "MiddleLayer";
+        private const string HighLayerNodeName = "HighLayer";
+        private const string TopLayerNodeName = "TopLayer";
+
         private readonly Dictionary<string, int> m_SerialIdByUIName = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Dictionary<int, string> m_UINameBySerialId = new Dictionary<int, string>();
+
+        private GameObject m_UICanvasInstance;
+        private Transform m_UIRoot;
+        private Transform m_LowLayer;
+        private Transform m_MainLayer;
+        private Transform m_MiddleLayer;
+        private Transform m_HighLayer;
+        private Transform m_TopLayer;
 
         protected override void OnInit()
         {
             base.OnInit();
+            InitUICanvas();
             EnsureDefaultGroups();
             RegisterFrameworkEvents();
         }
@@ -24,7 +41,7 @@ namespace Mini3
         public int Open(string uiName, object userData = null)
         {
             UIFormConfig config = UIFormDefine.Get(uiName);
-            if (!ResMgr.inst.TryGetUIPrefabPath(config.AssetName, out string resourcePath))
+            if (!ResMgr.inst.TryGetPrefabPath(config.AssetName, out string resourcePath))
             {
                 resourcePath = config.AssetName;
             }
@@ -103,6 +120,24 @@ namespace Mini3
         {
             string finalAssetName = string.IsNullOrWhiteSpace(assetName) ? uiName : assetName;
             UIFormDefine.Register(new UIFormConfig(uiName, finalAssetName, groupName, pauseCoveredUIForm, priority));
+        }
+
+        public Transform GetLayerRoot(UILayerName layerName)
+        {
+            switch (layerName)
+            {
+                case UILayerName.LowLayer:
+                    return m_LowLayer;
+                case UILayerName.MiddleLayer:
+                    return m_MiddleLayer;
+                case UILayerName.HighLayer:
+                    return m_HighLayer;
+                case UILayerName.TopLayer:
+                    return m_TopLayer;
+                case UILayerName.MainLayer:
+                default:
+                    return m_MainLayer;
+            }
         }
 
         private void EnsureDefaultGroups()
@@ -186,7 +221,7 @@ namespace Mini3
                 return GetUIComponent().GetUIForm(serialId);
             }
 
-            if (ResMgr.inst.TryGetUIPrefabPath(config.AssetName, out string resourcePath))
+            if (ResMgr.inst.TryGetPrefabPath(config.AssetName, out string resourcePath))
             {
                 return GetUIComponent().GetUIForm(resourcePath);
             }
@@ -210,6 +245,39 @@ namespace Mini3
             }
 
             return string.IsNullOrWhiteSpace(uiFormAssetName) ? serialId.ToString() : uiFormAssetName;
+        }
+
+        private void InitUICanvas()
+        {
+            if (m_UICanvasInstance != null)
+            {
+                return;
+            }
+
+            GameObject uiCanvasPrefab = ResMgr.inst.LoadPrefab(UICanvasAssetName);
+            if (uiCanvasPrefab == null)
+            {
+                Debug.LogWarning($"UIMgr init ui canvas failed, prefab not found. assetName = {UICanvasAssetName}");
+                return;
+            }
+
+            m_UICanvasInstance = UnityEngine.Object.Instantiate(uiCanvasPrefab);
+            m_UICanvasInstance.name = uiCanvasPrefab.name;
+            UnityEngine.Object.DontDestroyOnLoad(m_UICanvasInstance);
+
+            Transform canvasTransform = m_UICanvasInstance.transform;
+            m_UIRoot = canvasTransform.Find(UIRootNodeName);
+            if (m_UIRoot == null)
+            {
+                Debug.LogWarning($"UIMgr init ui canvas failed, node not found. nodeName = {UIRootNodeName}");
+                return;
+            }
+
+            m_LowLayer = m_UIRoot.Find(LowLayerNodeName);
+            m_MainLayer = m_UIRoot.Find(MainLayerNodeName);
+            m_MiddleLayer = m_UIRoot.Find(MiddleLayerNodeName);
+            m_HighLayer = m_UIRoot.Find(HighLayerNodeName);
+            m_TopLayer = m_UIRoot.Find(TopLayerNodeName);
         }
 
         private static UIComponent GetUIComponent()

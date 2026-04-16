@@ -98,23 +98,25 @@
 
 ### 3.4 Resources 目录规则
 
-UI 与图片资源统一放在 `Assets/Resources` 下。
+Prefab 与图片资源统一放在 `Assets/Resources` 下。
 
 推荐目录：
 
 - `Assets/Resources/UI/<Module>/<ViewName>.prefab`
+- `Assets/Resources/Prefab/<Category>/<PrefabName>.prefab`
 - `Assets/Resources/Image/<Module>/<SpriteName>.png`
 
 示例：
 
 - `Assets/Resources/UI/Battle/BattleMainView.prefab`
+- `Assets/Resources/Prefab/Card/WarriorCard.prefab`
 - `Assets/Resources/Image/Common/CommonCloseImg.png`
 
 ## 4. 资源规则
 
 ### 4.1 唯一命名
 
-所有 UI 预设名、图片名必须全局唯一。
+所有 prefab 名、图片名必须全局唯一。
 
 原因：
 
@@ -125,6 +127,7 @@ UI 与图片资源统一放在 `Assets/Resources` 下。
 示例：
 
 - 合法：`BattleMainView`
+- 合法：`WarriorCard`
 - 合法：`CommonCloseImg`
 - 不合法：两个不同目录下同时存在 `BattleMainView.prefab`
 
@@ -133,9 +136,24 @@ UI 与图片资源统一放在 `Assets/Resources` 下。
 运行时通过 `ResMgr` 按资源名加载：
 
 - `ResMgr.inst.LoadPrefab("BattleMainView")`
+- `ResMgr.inst.LoadPrefab("WarriorCard")`
 - `ResMgr.inst.LoadSprite("CommonCloseImg")`
 
 不直接在业务中手写 `Resources` 路径。
+
+### 4.3 注册表生成规则
+
+资源注册表由编辑器工具自动生成，不手写维护。
+
+当前生成规则：
+
+- 统一扫描 `Assets/Resources` 下所有 prefab
+- 扫描 `Assets/Resources/Image` 下所有图片资源
+- 自动生成 `资源名 -> Resources路径` 映射
+
+对应入口：
+
+- `Tools/UI/Generate Resource Registry`
 
 ## 5. 运行时职责
 
@@ -147,6 +165,8 @@ UI 与图片资源统一放在 `Assets/Resources` 下。
 - 关闭 UI
 - 查询 UI
 - 维护 UI 名称与实例映射
+- 初始化时自动加载 `UICanvas`
+- 缓存 `UIRoot` 与五层节点
 - 统一接入 `UIComponent`
 
 常用方式：
@@ -167,6 +187,7 @@ UIMgr.inst.Close("BattleMainView");
 - 事件注册与反注册
 - 刷新界面
 - 关闭自身
+- 声明默认 UI 层级
 
 常用重写方法：
 
@@ -176,6 +197,7 @@ UIMgr.inst.Close("BattleMainView");
 - `OnOpenUI(object userData)`
 - `OnCloseUI(bool isShutdown, object userData)`
 - `RefreshView()`
+- `LayerName`
 
 ### 5.3 `BaseItem`
 

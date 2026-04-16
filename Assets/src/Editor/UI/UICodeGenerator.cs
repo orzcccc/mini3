@@ -18,12 +18,12 @@ namespace Mini3.Editor.UI
         public static bool GenerateResourceRegistry(out string errorMessage)
         {
             errorMessage = string.Empty;
-            if (!UIResourceNameValidator.TryCollectResources(out Dictionary<string, string> uiPaths, out Dictionary<string, string> imagePaths, out errorMessage))
+            if (!UIResourceNameValidator.TryCollectResources(out Dictionary<string, string> prefabPaths, out Dictionary<string, string> imagePaths, out errorMessage))
             {
                 return false;
             }
 
-            string content = GenerateRegistryContent(uiPaths, imagePaths);
+            string content = GenerateRegistryContent(prefabPaths, imagePaths);
             WriteAllText(UIPathRegistryFile, content);
             AssetDatabase.Refresh();
             return true;
@@ -61,7 +61,7 @@ namespace Mini3.Editor.UI
             return true;
         }
 
-        private static string GenerateRegistryContent(IReadOnlyDictionary<string, string> uiPaths, IReadOnlyDictionary<string, string> imagePaths)
+        private static string GenerateRegistryContent(IReadOnlyDictionary<string, string> prefabPaths, IReadOnlyDictionary<string, string> imagePaths)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("using System;");
@@ -76,9 +76,9 @@ namespace Mini3.Editor.UI
             builder.AppendLine("        static UIPathRegistry()");
             builder.AppendLine("        {");
 
-            foreach (KeyValuePair<string, string> pair in uiPaths)
+            foreach (KeyValuePair<string, string> pair in prefabPaths)
             {
-                builder.AppendFormat("            RegisterUI(\"{0}\", \"{1}\");", Escape(pair.Key), Escape(pair.Value)).AppendLine();
+                builder.AppendFormat("            RegisterPrefab(\"{0}\", \"{1}\");", Escape(pair.Key), Escape(pair.Value)).AppendLine();
             }
 
             foreach (KeyValuePair<string, string> pair in imagePaths)

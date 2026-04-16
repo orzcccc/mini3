@@ -17,6 +17,8 @@ namespace Mini3
 
         public object OpenUserData => m_OpenUserData;
 
+        public virtual UILayerName LayerName => UILayerName.MainLayer;
+
         protected sealed override void OnInit(object userData)
         {
             base.OnInit(userData);

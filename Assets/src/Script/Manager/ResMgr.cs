@@ -24,7 +24,7 @@ namespace Mini3
             m_PrefabPathByName.Clear();
             m_SpritePathByName.Clear();
 
-            foreach (KeyValuePair<string, string> pair in UIPathRegistry.UIPathByName)
+            foreach (KeyValuePair<string, string> pair in UIPathRegistry.PrefabPathByName)
             {
                 m_PrefabPathByName[pair.Key] = pair.Value;
             }
@@ -82,7 +82,7 @@ namespace Mini3
             return m_SpritePathByName.TryGetValue(assetName, out resourcePath);
         }
 
-        public bool TryGetUIPrefabPath(string assetName, out string resourcePath)
+        public bool TryGetPrefabPath(string assetName, out string resourcePath)
         {
             return m_PrefabPathByName.TryGetValue(assetName, out resourcePath);
         }

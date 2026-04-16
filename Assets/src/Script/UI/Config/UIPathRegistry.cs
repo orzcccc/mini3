@@ -8,16 +8,16 @@ namespace Mini3
     /// </summary>
     public static partial class UIPathRegistry
     {
-        private static readonly Dictionary<string, string> s_UIPathByName = new Dictionary<string, string>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, string> s_PrefabPathByName = new Dictionary<string, string>(StringComparer.Ordinal);
         private static readonly Dictionary<string, string> s_ImagePathByName = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        public static IReadOnlyDictionary<string, string> UIPathByName => s_UIPathByName;
+        public static IReadOnlyDictionary<string, string> PrefabPathByName => s_PrefabPathByName;
 
         public static IReadOnlyDictionary<string, string> ImagePathByName => s_ImagePathByName;
 
-        public static void RegisterUI(string assetName, string resourcePath)
+        public static void RegisterPrefab(string assetName, string resourcePath)
         {
-            RegisterInternal(s_UIPathByName, assetName, resourcePath);
+            RegisterInternal(s_PrefabPathByName, assetName, resourcePath);
         }
 
         public static void RegisterImage(string assetName, string resourcePath)
@@ -27,7 +27,7 @@ namespace Mini3
 
         public static void Clear()
         {
-            s_UIPathByName.Clear();
+            s_PrefabPathByName.Clear();
             s_ImagePathByName.Clear();
         }
 
