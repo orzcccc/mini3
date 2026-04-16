@@ -14,19 +14,44 @@ namespace Mini3.Editor.UI
     {
         private const string UIPathRegistryFile = "Assets/src/Script/UI/Config/UIPathRegistry.Generated.cs";
         private const string UIScriptRoot = "Assets/src/Script/UI";
+        private static bool s_IsGeneratingResourceRegistry;
+
+        public static bool IsGeneratingResourceRegistry => s_IsGeneratingResourceRegistry;
 
         public static bool GenerateResourceRegistry(out string errorMessage)
         {
+            return GenerateResourceRegistry(true, out errorMessage);
+        }
+
+        public static bool GenerateResourceRegistry(bool refreshAssetDatabase, out string errorMessage)
+        {
             errorMessage = string.Empty;
+            if (s_IsGeneratingResourceRegistry)
+            {
+                return true;
+            }
+
             if (!UIResourceNameValidator.TryCollectResources(out Dictionary<string, string> prefabPaths, out Dictionary<string, string> imagePaths, out errorMessage))
             {
                 return false;
             }
 
-            string content = GenerateRegistryContent(prefabPaths, imagePaths);
-            WriteAllText(UIPathRegistryFile, content);
-            AssetDatabase.Refresh();
-            return true;
+            try
+            {
+                s_IsGeneratingResourceRegistry = true;
+                string content = GenerateRegistryContent(prefabPaths, imagePaths);
+                WriteAllText(UIPathRegistryFile, content);
+                if (refreshAssetDatabase)
+                {
+                    AssetDatabase.Refresh();
+                }
+
+                return true;
+            }
+            finally
+            {
+                s_IsGeneratingResourceRegistry = false;
+            }
         }
 
         public static bool GenerateUIScript(UIWidget uiWidget, out string errorMessage)

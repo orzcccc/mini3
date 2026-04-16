@@ -78,7 +78,7 @@ namespace Mini3.Editor.UI
                 return string.Empty;
             }
 
-            int pathStart = resourcesIndex + "/Resources/".Length + 1;
+            int pathStart = resourcesIndex + "/Resources/".Length;
             string relativePath = normalizedPath.Substring(pathStart);
             return Path.ChangeExtension(relativePath, null)?.Replace('\\', '/');
         }
