@@ -35,6 +35,11 @@ namespace Mini3
         {
         }
 
+        public virtual void SetData(object data)
+        {
+            Refresh();
+        }
+
         public virtual void Dispose()
         {
             UnbindEvents();

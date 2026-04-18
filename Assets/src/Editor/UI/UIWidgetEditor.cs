@@ -62,7 +62,7 @@ namespace Mini3.Editor.UI
             }
 
             string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
-            string folderPath = $"Assets/src/Script/UI/{moduleName}/{uiName}";
+            string folderPath = $"Assets/src/Script/UI/{moduleName}";
             if (!AssetDatabase.IsValidFolder(folderPath))
             {
                 Debug.LogWarning($"[UI] 脚本目录尚未创建：{folderPath}");

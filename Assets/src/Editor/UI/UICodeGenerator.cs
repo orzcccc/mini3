@@ -89,7 +89,7 @@ namespace Mini3.Editor.UI
 
             string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
             bool isView = UIBindingScanner.IsViewName(uiName);
-            string targetDirectory = $"{UIScriptRoot}/{moduleName}/{uiName}";
+            string targetDirectory = $"{UIScriptRoot}/{moduleName}";
             string targetFilePath = $"{targetDirectory}/{uiName}.cs";
 
             if (writeMode == UIScriptWriteMode.Create && File.Exists(targetFilePath))
@@ -199,22 +199,26 @@ namespace Mini3.Editor.UI
             if (isView)
             {
                 builder.AppendLine();
-                builder.AppendLine("        protected override void OnOpenUI(object userData)");
+                builder.AppendLine("        protected override void Init(object userData)");
                 builder.AppendLine("        {");
-                builder.AppendLine("            base.OnOpenUI(userData);");
+                builder.AppendLine("            base.Init(userData);");
                 builder.AppendLine("        }");
                 builder.AppendLine();
-                builder.AppendLine("        protected override void OnCloseUI(bool isShutdown, object userData)");
+                builder.AppendLine("        protected override void AfterOpenView(object userData)");
                 builder.AppendLine("        {");
-                builder.AppendLine("            base.OnCloseUI(isShutdown, userData);");
+                builder.AppendLine("            base.AfterOpenView(userData);");
                 builder.AppendLine("        }");
                 builder.AppendLine();
+                builder.AppendLine("        protected override void BeforeCloseView(object userData)");
+                builder.AppendLine("        {");
+                builder.AppendLine("            base.BeforeCloseView(userData);");
+                builder.AppendLine("        }");
+                builder.AppendLine();
+                builder.AppendLine("        protected override void Destroy()");
+                builder.AppendLine("        {");
+                builder.AppendLine("            base.Destroy();");
+                builder.AppendLine("        }");
             }
-
-            builder.AppendLine("        protected override void RefreshView()");
-            builder.AppendLine("        {");
-            builder.AppendLine("            base.RefreshView();");
-            builder.AppendLine("        }");
 
             AppendButtonHandlers(builder, bindings);
 

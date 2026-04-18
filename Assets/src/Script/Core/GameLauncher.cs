@@ -73,6 +73,7 @@ namespace Mini3
         private static void InitGameModules()
         {
             _ = UIMgr.inst;
+            UIMgr.inst.Open("MainCardView");
         }
 
         private static void OnDefaultGameEvent(object sender, GameEventArgs e)

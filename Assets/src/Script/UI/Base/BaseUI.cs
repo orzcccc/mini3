@@ -10,6 +10,7 @@ namespace Mini3
     {
         private bool m_IsBound;
         private object m_OpenUserData;
+        private bool m_IsDestroyed;
 
         public string UIName => UIForm != null ? UIForm.UIFormAssetName : gameObject.name;
 
@@ -24,7 +25,7 @@ namespace Mini3
             base.OnInit(userData);
             BindComponents();
             m_IsBound = true;
-            OnInitUI(userData);
+            Init(userData);
         }
 
         protected sealed override void OnOpen(object userData)
@@ -38,36 +39,26 @@ namespace Mini3
             }
 
             BindEvents();
-            OnOpenUI(userData);
-            RefreshView();
+            AfterOpenView(userData);
         }
 
         protected sealed override void OnClose(bool isShutdown, object userData)
         {
+            BeforeCloseView(userData);
             UnbindEvents();
-            OnCloseUI(isShutdown, userData);
             m_OpenUserData = null;
             base.OnClose(isShutdown, userData);
         }
 
-        protected sealed override void OnPause()
+        protected sealed override void OnRecycle()
         {
-            OnPauseUI();
-            base.OnPause();
-        }
+            if (!m_IsDestroyed)
+            {
+                m_IsDestroyed = true;
+                Destroy();
+            }
 
-        protected sealed override void OnResume()
-        {
-            base.OnResume();
-            OnResumeUI();
-        }
-
-        protected sealed override void OnRefocus(object userData)
-        {
-            base.OnRefocus(userData);
-            m_OpenUserData = userData;
-            OnRefocusUI(userData);
-            RefreshView();
+            base.OnRecycle();
         }
 
         protected virtual void BindComponents()
@@ -82,31 +73,19 @@ namespace Mini3
         {
         }
 
-        protected virtual void RefreshView()
+        protected virtual void Init(object userData)
         {
         }
 
-        protected virtual void OnInitUI(object userData)
+        protected virtual void AfterOpenView(object userData)
         {
         }
 
-        protected virtual void OnOpenUI(object userData)
+        protected virtual void BeforeCloseView(object userData)
         {
         }
 
-        protected virtual void OnCloseUI(bool isShutdown, object userData)
-        {
-        }
-
-        protected virtual void OnPauseUI()
-        {
-        }
-
-        protected virtual void OnResumeUI()
-        {
-        }
-
-        protected virtual void OnRefocusUI(object userData)
+        protected virtual void Destroy()
         {
         }
 

@@ -41,14 +41,14 @@ namespace Mini3
         public int Open(string uiName, object userData = null)
         {
             UIFormConfig config = UIFormDefine.Get(uiName);
-            if (!ResMgr.inst.TryGetPrefabPath(config.AssetName, out string resourcePath))
+            if (!TryGetUIFormAssetPath(config.AssetName, out string uiFormAssetPath))
             {
-                resourcePath = config.AssetName;
+                uiFormAssetPath = config.AssetName;
             }
 
             EnsureGroup(config.GroupName);
 
-            int serialId = GetUIComponent().OpenUIForm(resourcePath, config.GroupName, config.Priority, config.PauseCoveredUIForm, userData);
+            int serialId = GetUIComponent().OpenUIForm(uiFormAssetPath, config.GroupName, config.Priority, config.PauseCoveredUIForm, userData);
             if (serialId > 0)
             {
                 m_SerialIdByUIName[config.UIName] = serialId;
@@ -221,12 +221,40 @@ namespace Mini3
                 return GetUIComponent().GetUIForm(serialId);
             }
 
-            if (ResMgr.inst.TryGetPrefabPath(config.AssetName, out string resourcePath))
+            if (TryGetUIFormAssetPath(config.AssetName, out string uiFormAssetPath))
             {
-                return GetUIComponent().GetUIForm(resourcePath);
+                return GetUIComponent().GetUIForm(uiFormAssetPath);
             }
 
             return GetUIComponent().GetUIForm(config.AssetName);
+        }
+
+        private static bool TryGetUIFormAssetPath(string assetName, out string uiFormAssetPath)
+        {
+            uiFormAssetPath = string.Empty;
+            if (!ResMgr.inst.TryGetPrefabPath(assetName, out string resourcePath))
+            {
+                return false;
+            }
+
+            uiFormAssetPath = ToUIFormAssetPath(resourcePath);
+            return !string.IsNullOrWhiteSpace(uiFormAssetPath);
+        }
+
+        private static string ToUIFormAssetPath(string resourcePath)
+        {
+            if (string.IsNullOrWhiteSpace(resourcePath))
+            {
+                return string.Empty;
+            }
+
+            BaseComponent baseComponent = GameEntry.GetComponent<BaseComponent>();
+            if (baseComponent != null && baseComponent.EditorResourceMode)
+            {
+                return $"Assets/Resources/{resourcePath}.prefab";
+            }
+
+            return resourcePath;
         }
 
         private string ResolveUIName(string uiFormAssetName, int serialId)

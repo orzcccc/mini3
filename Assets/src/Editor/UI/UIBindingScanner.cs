@@ -131,8 +131,18 @@ namespace Mini3.Editor.UI
             {
                 Transform child = root.GetChild(i);
                 results.Add(child);
-                CollectChildren(child, results);
+                if (!ShouldSkipChildScan(child))
+                {
+                    CollectChildren(child, results);
+                }
             }
+        }
+
+        private static bool ShouldSkipChildScan(Transform target)
+        {
+            return target != null
+                && target.name.EndsWith("Item", StringComparison.Ordinal)
+                && target.GetComponent<UIWidget>() != null;
         }
 
         private static bool TryCreateBindData(Transform root, Transform target, out UIBindData bindData)
