@@ -73,16 +73,11 @@ public sealed class KeyboardMgr : Singleton<KeyboardMgr>
 
     private void RegisterDefaultDebugShortcuts()
     {
-        RegisterKeyDown(KeyCode.F2, OpenMainCardView);
+        RegisterKeyDown(KeyCode.F2, OpenGMView);
     }
 
-    private static void OpenMainCardView()
+    private static void OpenGMView()
     {
-        if (UIMgr.inst.IsOpen("MainCardView"))
-        {
-            return;
-        }
-
-        UIMgr.inst.Open("MainCardView");
+        UIMgr.inst.Open("GMView");
     }
 }

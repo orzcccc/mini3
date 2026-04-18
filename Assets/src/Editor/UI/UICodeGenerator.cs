@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using TMPro;
 
@@ -85,7 +86,7 @@ public static class UICodeGenerator
             return false;
         }
 
-        string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
+        string uiName = uiWidget.UIName;
         bool isView = UIBindingScanner.IsViewName(uiName);
         string targetDirectory = $"{UIScriptRoot}/{moduleName}";
         string targetFilePath = $"{targetDirectory}/{uiName}.cs";
@@ -117,6 +118,28 @@ public static class UICodeGenerator
         }
 
         return true;
+    }
+
+    public static void AutoAttachLogicScriptIfExists(UIWidget uiWidget)
+    {
+        if (uiWidget == null)
+        {
+            return;
+        }
+
+        string moduleName = ResolveModuleName(uiWidget);
+        if (string.IsNullOrWhiteSpace(moduleName))
+        {
+            return;
+        }
+
+        string uiName = uiWidget.UIName;
+        if (string.IsNullOrWhiteSpace(uiName))
+        {
+            return;
+        }
+
+        AttachLogicScriptIfExists(uiWidget, moduleName, uiName);
     }
 
     private static string GenerateRegistryContent(IReadOnlyDictionary<string, string> prefabPaths, IReadOnlyDictionary<string, string> imagePaths)
@@ -189,7 +212,6 @@ public static class UICodeGenerator
         builder.AppendLine("    protected override void UnbindEvents()");
         builder.AppendLine("    {");
         AppendButtonStatements(builder, bindings, false);
-        AppendItemDisposeStatements(builder, bindings);
         builder.AppendLine("        base.UnbindEvents();");
         builder.AppendLine("    }");
         builder.AppendLine();
@@ -214,6 +236,7 @@ public static class UICodeGenerator
             builder.AppendLine();
             builder.AppendLine("    protected override void Destroy()");
             builder.AppendLine("    {");
+            AppendItemDisposeStatements(builder, bindings);
             builder.AppendLine("        base.Destroy();");
             builder.AppendLine("    }");
         }
@@ -398,16 +421,7 @@ public static class UICodeGenerator
 
     private static string ResolveModuleName(UIWidget uiWidget)
     {
-        if (!string.IsNullOrWhiteSpace(uiWidget.ModuleName))
-        {
-            return uiWidget.ModuleName;
-        }
-
-        string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
-        if (string.IsNullOrWhiteSpace(assetPath))
-        {
-            assetPath = AssetDatabase.GetAssetPath(uiWidget.gameObject);
-        }
+        string assetPath = ResolveWidgetAssetPath(uiWidget);
 
         if (string.IsNullOrWhiteSpace(assetPath))
         {
@@ -422,6 +436,28 @@ public static class UICodeGenerator
 
         folderPath = folderPath.Replace('\\', '/');
         return Path.GetFileName(folderPath);
+    }
+
+    private static string ResolveWidgetAssetPath(UIWidget uiWidget)
+    {
+        if (uiWidget == null)
+        {
+            return string.Empty;
+        }
+
+        string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
+        if (!string.IsNullOrWhiteSpace(assetPath))
+        {
+            return assetPath;
+        }
+
+        PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+        if (prefabStage != null && prefabStage.IsPartOfPrefabContents(uiWidget.gameObject))
+        {
+            return prefabStage.assetPath;
+        }
+
+        return AssetDatabase.GetAssetPath(uiWidget.gameObject);
     }
 
     private static bool AttachLogicScript(UIWidget uiWidget, string moduleName, string uiName, out string errorMessage)
@@ -465,6 +501,35 @@ public static class UICodeGenerator
         EditorUtility.SetDirty(uiWidget.gameObject);
         AssetDatabase.SaveAssets();
         return true;
+    }
+
+    private static void AttachLogicScriptIfExists(UIWidget uiWidget, string moduleName, string uiName)
+    {
+        if (uiWidget == null || string.IsNullOrWhiteSpace(moduleName) || string.IsNullOrWhiteSpace(uiName))
+        {
+            return;
+        }
+
+        string scriptAssetPath = $"{UIScriptRoot}/{moduleName}/{uiName}.cs";
+        MonoScript monoScript = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptAssetPath);
+        if (monoScript == null)
+        {
+            return;
+        }
+
+        Type scriptType = monoScript.GetClass();
+        if (scriptType == null || !typeof(Component).IsAssignableFrom(scriptType))
+        {
+            return;
+        }
+
+        if (uiWidget.GetComponent(scriptType) != null)
+        {
+            return;
+        }
+
+        Undo.AddComponent(uiWidget.gameObject, scriptType);
+        EditorUtility.SetDirty(uiWidget.gameObject);
     }
 
     private static void EnsureDirectory(string assetDirectoryPath)

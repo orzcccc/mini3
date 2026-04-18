@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>
@@ -59,7 +60,7 @@ public static class UIWidgetEditor
             return;
         }
 
-        string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
+        string uiName = uiWidget.UIName;
         string folderPath = $"Assets/src/Script/UI/{moduleName}";
         if (!AssetDatabase.IsValidFolder(folderPath))
         {
@@ -113,11 +114,6 @@ public static class UIWidgetEditor
         Undo.RecordObject(uiWidget, "Rescan UI Bindings");
         uiWidget.Bindings.Clear();
         uiWidget.Bindings.AddRange(bindings);
-        if (string.IsNullOrWhiteSpace(uiWidget.UIName))
-        {
-            uiWidget.UIName = uiWidget.gameObject.name;
-        }
-
         bindingCount = bindings.Count;
         EditorUtility.SetDirty(uiWidget);
         AssetDatabase.SaveAssets();
@@ -126,16 +122,7 @@ public static class UIWidgetEditor
 
     private static string ResolveModuleName(UIWidget uiWidget)
     {
-        if (!string.IsNullOrWhiteSpace(uiWidget.ModuleName))
-        {
-            return uiWidget.ModuleName;
-        }
-
-        string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
-        if (string.IsNullOrWhiteSpace(assetPath))
-        {
-            assetPath = AssetDatabase.GetAssetPath(uiWidget.gameObject);
-        }
+        string assetPath = ResolveWidgetAssetPath(uiWidget);
 
         if (string.IsNullOrWhiteSpace(assetPath))
         {
@@ -150,5 +137,27 @@ public static class UIWidgetEditor
 
         folderPath = folderPath.Replace('\\', '/');
         return System.IO.Path.GetFileName(folderPath);
+    }
+
+    private static string ResolveWidgetAssetPath(UIWidget uiWidget)
+    {
+        if (uiWidget == null)
+        {
+            return string.Empty;
+        }
+
+        string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
+        if (!string.IsNullOrWhiteSpace(assetPath))
+        {
+            return assetPath;
+        }
+
+        PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+        if (prefabStage != null && prefabStage.IsPartOfPrefabContents(uiWidget.gameObject))
+        {
+            return prefabStage.assetPath;
+        }
+
+        return AssetDatabase.GetAssetPath(uiWidget.gameObject);
     }
 }

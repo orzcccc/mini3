@@ -38,6 +38,12 @@ public sealed class UIMgr : Singleton<UIMgr>
 
     public int Open(string uiName, object userData = null)
     {
+        UIForm existingUI = TryGetUIFormByConfig(uiName);
+        if (existingUI != null)
+        {
+            return existingUI.SerialId;
+        }
+
         UIFormConfig config = UIFormDefine.Get(uiName);
         if (!TryGetUIFormAssetPath(config.AssetName, out string uiFormAssetPath))
         {

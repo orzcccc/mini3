@@ -15,25 +15,11 @@ public sealed class UIWidget : MonoBehaviour
     private static bool s_IsSyncingBindings;
 
     [SerializeField]
-    private string m_ModuleName = "Common";
-
-    [SerializeField]
-    private string m_UIName = string.Empty;
-
-    [SerializeField]
     private List<UIBindData> m_Bindings = new List<UIBindData>();
 
-    public string ModuleName
-    {
-        get => m_ModuleName;
-        set => m_ModuleName = value;
-    }
+    public string ModuleName => ResolveModuleName();
 
-    public string UIName
-    {
-        get => string.IsNullOrWhiteSpace(m_UIName) ? gameObject.name : m_UIName;
-        set => m_UIName = value;
-    }
+    public string UIName => gameObject.name;
 
     public List<UIBindData> Bindings => m_Bindings;
 
@@ -45,15 +31,12 @@ public sealed class UIWidget : MonoBehaviour
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(m_UIName))
-        {
-            m_UIName = gameObject.name;
-        }
-
         if (!IsBindableWidgetName(UIName))
         {
             return;
         }
+
+        TryAutoAttachLogicScript();
 
         if (!TryScanBindings(out List<UIBindData> bindings))
         {
@@ -157,6 +140,29 @@ public sealed class UIWidget : MonoBehaviour
 
         bindings = parameters[1] as List<UIBindData>;
         return bindings != null;
+    }
+
+    private void TryAutoAttachLogicScript()
+    {
+        Type codeGeneratorType = GetEditorType("UICodeGenerator");
+        MethodInfo method = codeGeneratorType?.GetMethod("AutoAttachLogicScriptIfExists", BindingFlags.Public | BindingFlags.Static);
+        method?.Invoke(null, new object[] { this });
+    }
+
+    private string ResolveModuleName()
+    {
+        Transform current = transform.parent;
+        while (current != null)
+        {
+            if (current.name == "Common")
+            {
+                return "Common";
+            }
+
+            current = current.parent;
+        }
+
+        return "Common";
     }
 
     private static Type GetEditorType(string fullName)

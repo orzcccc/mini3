@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 /// <summary>
 /// 编辑器自动生成的 Resources 资源注册表。
@@ -7,6 +7,7 @@ public static partial class UIPathRegistry
 {
     static UIPathRegistry()
     {
+        RegisterPrefab("GMView", "UIPrefab/Card/GMView");
         RegisterPrefab("MainCardView", "UIPrefab/Card/MainCardView");
         RegisterPrefab("CommonBackBoxItem", "UIPrefab/CommonPrefabs/CommonBackBoxItem");
         RegisterPrefab("UICanvas", "UIPrefab/CommonPrefabs/UICanvas");
