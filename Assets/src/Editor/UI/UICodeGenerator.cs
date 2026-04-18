@@ -113,6 +113,11 @@ namespace Mini3.Editor.UI
             string content = GenerateUIScriptContent(moduleName, uiName, bindings, isView);
             WriteAllText(targetFilePath, content);
             AssetDatabase.Refresh();
+            if (!AttachLogicScript(uiWidget, moduleName, uiName, out errorMessage))
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -425,6 +430,49 @@ namespace Mini3.Editor.UI
 
             folderPath = folderPath.Replace('\\', '/');
             return Path.GetFileName(folderPath);
+        }
+
+        private static bool AttachLogicScript(UIWidget uiWidget, string moduleName, string uiName, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (uiWidget == null)
+            {
+                errorMessage = "UIWidget is null.";
+                return false;
+            }
+
+            string scriptAssetPath = $"{UIScriptRoot}/{moduleName}/{uiName}.cs";
+            MonoScript monoScript = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptAssetPath);
+            if (monoScript == null)
+            {
+                errorMessage = $"无法加载生成脚本：{scriptAssetPath}";
+                return false;
+            }
+
+            Type scriptType = monoScript.GetClass();
+            if (scriptType == null)
+            {
+                errorMessage = $"生成脚本尚未编译完成，请等待 Unity 编译后重试：{scriptAssetPath}";
+                return false;
+            }
+
+            if (!typeof(Component).IsAssignableFrom(scriptType))
+            {
+                return true;
+            }
+
+            Component existingComponent = uiWidget.GetComponent(scriptType);
+            if (existingComponent != null)
+            {
+                EditorUtility.SetDirty(uiWidget.gameObject);
+                AssetDatabase.SaveAssets();
+                return true;
+            }
+
+            Undo.AddComponent(uiWidget.gameObject, scriptType);
+            EditorUtility.SetDirty(uiWidget.gameObject);
+            AssetDatabase.SaveAssets();
+            return true;
         }
 
         private static void EnsureDirectory(string assetDirectoryPath)

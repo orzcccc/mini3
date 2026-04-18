@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 namespace Mini3.UI.Common
 {
@@ -11,7 +13,7 @@ namespace Mini3.UI.Common
         {
             base.BindComponents();
             m_commonBackBoxItemGo = FindGameObject("CommonBackBoxItem");
-            m_commonBackBoxItem = m_commonBackBoxItemGo != null ? new CommonBackBoxItem(m_commonBackBoxItemGo, gameObject) : null;
+            m_commonBackBoxItem = m_commonBackBoxItemGo != null ? new CommonBackBoxItem(m_commonBackBoxItemGo) : null;
         }
 
         protected override void BindEvents()
@@ -29,7 +31,6 @@ namespace Mini3.UI.Common
             base.UnbindEvents();
         }
 
-        public override UILayerName LayerName => UILayerName.MiddleLayer;
 
         protected override void Init(object userData)
         {
@@ -39,10 +40,6 @@ namespace Mini3.UI.Common
         protected override void AfterOpenView(object userData)
         {
             base.AfterOpenView(userData);
-            if (m_commonBackBoxItem != null)
-            {
-                m_commonBackBoxItem.SetData("背景框标题");
-            }
         }
 
         protected override void BeforeCloseView(object userData)

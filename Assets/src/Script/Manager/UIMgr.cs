@@ -160,6 +160,24 @@ namespace Mini3
             uiComponent.AddUIGroup(groupName, depth);
         }
 
+        private Transform GetGroupRoot(string groupName)
+        {
+            switch (groupName)
+            {
+                case UIGroupName.Background:
+                    return m_LowLayer;
+                case UIGroupName.Popup:
+                    return m_MiddleLayer;
+                case UIGroupName.Top:
+                case UIGroupName.Guide:
+                case UIGroupName.Loading:
+                    return m_TopLayer;
+                case UIGroupName.Normal:
+                default:
+                    return m_MainLayer;
+            }
+        }
+
         private void RegisterFrameworkEvents()
         {
             EventMgr.inst.AddEvent(OpenUIFormSuccessEventArgs.EventId, OnOpenUIFormSuccess);
@@ -178,6 +196,7 @@ namespace Mini3
             string uiName = ResolveUIName(ne.UIForm.UIFormAssetName, ne.UIForm.SerialId);
             m_SerialIdByUIName[uiName] = ne.UIForm.SerialId;
             m_UINameBySerialId[ne.UIForm.SerialId] = uiName;
+            ReparentUIForm(ne.UIForm);
         }
 
         private void OnOpenUIFormFailure(object sender, GameEventArgs e)
@@ -227,6 +246,41 @@ namespace Mini3
             }
 
             return GetUIComponent().GetUIForm(config.AssetName);
+        }
+
+        private void ReparentUIForm(UIForm uiForm)
+        {
+            if (uiForm == null)
+            {
+                return;
+            }
+
+            Transform targetRoot = GetUIFormLayerRoot(uiForm);
+            if (targetRoot == null)
+            {
+                return;
+            }
+
+            Transform uiTransform = uiForm.transform;
+            if (uiTransform.parent == targetRoot)
+            {
+                return;
+            }
+
+            uiTransform.SetParent(targetRoot, false);
+            uiTransform.localScale = Vector3.one;
+            uiTransform.localPosition = Vector3.zero;
+        }
+
+        private Transform GetUIFormLayerRoot(UIForm uiForm)
+        {
+            BaseUI baseUI = uiForm != null ? uiForm.Logic as BaseUI : null;
+            if (baseUI != null)
+            {
+                return GetLayerRoot(baseUI.LayerName);
+            }
+
+            return uiForm?.UIGroup != null ? GetGroupRoot(uiForm.UIGroup.Name) : null;
         }
 
         private static bool TryGetUIFormAssetPath(string assetName, out string uiFormAssetPath)
