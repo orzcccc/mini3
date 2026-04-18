@@ -73,9 +73,10 @@ namespace Mini3
         GameObject = 1,
         Transform = 2,
         Text = 3,
-        Image = 4,
-        RawImage = 5,
-        Button = 6,
-        Item = 7
+        OldText = 4,
+        Image = 5,
+        RawImage = 6,
+        Button = 7,
+        Item = 8
     }
 }

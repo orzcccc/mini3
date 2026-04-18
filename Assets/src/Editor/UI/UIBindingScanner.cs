@@ -4,6 +4,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace Mini3.Editor.UI
 {
@@ -161,7 +162,7 @@ namespace Mini3.Editor.UI
             componentTypeName = string.Empty;
 
             string nodeName = target.name;
-            if (nodeName.EndsWith("Txt", StringComparison.Ordinal))
+            if (nodeName.EndsWith("OldTxt", StringComparison.Ordinal))
             {
                 Text text = target.GetComponent<Text>();
                 if (text == null)
@@ -169,8 +170,21 @@ namespace Mini3.Editor.UI
                     return false;
                 }
 
-                bindType = UIBindType.Text;
+                bindType = UIBindType.OldText;
                 componentTypeName = typeof(Text).FullName;
+                return true;
+            }
+
+            if (nodeName.EndsWith("Txt", StringComparison.Ordinal))
+            {
+                TextMeshProUGUI text = target.GetComponent<TextMeshProUGUI>();
+                if (text == null)
+                {
+                    return false;
+                }
+
+                bindType = UIBindType.Text;
+                componentTypeName = typeof(TextMeshProUGUI).FullName;
                 return true;
             }
 

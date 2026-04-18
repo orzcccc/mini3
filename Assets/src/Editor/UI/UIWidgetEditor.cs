@@ -21,32 +21,16 @@ namespace Mini3.Editor.UI
             Debug.Log("[UI] 资源注册表已生成。");
         }
 
-        [MenuItem("CONTEXT/UIWidget/Rescan Bindings")]
-        private static void RescanBindings(MenuCommand command)
+        [MenuItem("CONTEXT/UIWidget/Create Script")]
+        private static void CreateScript(MenuCommand command)
         {
-            UIWidget uiWidget = command.context as UIWidget;
-            if (uiWidget == null)
-            {
-                return;
-            }
+            GenerateUIScript(command, UICodeGenerator.UIScriptWriteMode.Create, "创建");
+        }
 
-            if (!UIBindingScanner.TryScan(uiWidget, out List<UIBindData> bindings, out string errorMessage))
-            {
-                Debug.LogError($"[UI] 扫描绑定失败：{errorMessage}");
-                return;
-            }
-
-            Undo.RecordObject(uiWidget, "Rescan UI Bindings");
-            uiWidget.Bindings.Clear();
-            uiWidget.Bindings.AddRange(bindings);
-            if (string.IsNullOrWhiteSpace(uiWidget.UIName))
-            {
-                uiWidget.UIName = uiWidget.gameObject.name;
-            }
-
-            EditorUtility.SetDirty(uiWidget);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[UI] 扫描完成，绑定数量: {bindings.Count}");
+        [MenuItem("CONTEXT/UIWidget/Update Script")]
+        private static void UpdateScript(MenuCommand command)
+        {
+            GenerateUIScript(command, UICodeGenerator.UIScriptWriteMode.Update, "更新");
         }
 
         [MenuItem("CONTEXT/UIWidget/Validate Resource Names")]
@@ -61,24 +45,6 @@ namespace Mini3.Editor.UI
             Debug.LogError($"[UI] Resources 命名校验失败：{errorMessage}");
         }
 
-        [MenuItem("CONTEXT/UIWidget/Generate UI Script")]
-        private static void GenerateUIScript(MenuCommand command)
-        {
-            UIWidget uiWidget = command.context as UIWidget;
-            if (uiWidget == null)
-            {
-                return;
-            }
-
-            if (!UICodeGenerator.GenerateUIScript(uiWidget, out string errorMessage))
-            {
-                Debug.LogError($"[UI] 生成 UI 脚本失败：{errorMessage}");
-                return;
-            }
-
-            Debug.Log($"[UI] 已生成 UI 脚本：{uiWidget.UIName}");
-        }
-
         [MenuItem("CONTEXT/UIWidget/Open Script Folder")]
         private static void OpenScriptFolder(MenuCommand command)
         {
@@ -88,7 +54,13 @@ namespace Mini3.Editor.UI
                 return;
             }
 
-            string moduleName = string.IsNullOrWhiteSpace(uiWidget.ModuleName) ? "Common" : uiWidget.ModuleName;
+            string moduleName = ResolveModuleName(uiWidget);
+            if (string.IsNullOrWhiteSpace(moduleName))
+            {
+                Debug.LogWarning($"[UI] 无法定位脚本目录，未能推断模块名：{uiWidget.name}");
+                return;
+            }
+
             string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
             string folderPath = $"Assets/src/Script/UI/{moduleName}/{uiName}";
             if (!AssetDatabase.IsValidFolder(folderPath))
@@ -100,6 +72,86 @@ namespace Mini3.Editor.UI
             Object folder = AssetDatabase.LoadAssetAtPath<Object>(folderPath);
             EditorUtility.FocusProjectWindow();
             Selection.activeObject = folder;
+        }
+
+        private static void GenerateUIScript(MenuCommand command, UICodeGenerator.UIScriptWriteMode writeMode, string actionName)
+        {
+            UIWidget uiWidget = command.context as UIWidget;
+            if (uiWidget == null)
+            {
+                return;
+            }
+
+            if (!RescanBindings(uiWidget, out int bindingCount, out string errorMessage))
+            {
+                Debug.LogError($"[UI] 扫描绑定失败：{errorMessage}");
+                return;
+            }
+
+            if (!UICodeGenerator.GenerateUIScript(uiWidget, writeMode, out errorMessage))
+            {
+                Debug.LogError($"[UI] {actionName} UI 脚本失败：{errorMessage}");
+                return;
+            }
+
+            Debug.Log($"[UI] 已{actionName} UI 脚本：{uiWidget.UIName}，绑定数量: {bindingCount}");
+        }
+
+        private static bool RescanBindings(UIWidget uiWidget, out int bindingCount, out string errorMessage)
+        {
+            bindingCount = 0;
+            errorMessage = string.Empty;
+            if (uiWidget == null)
+            {
+                errorMessage = "UIWidget is null.";
+                return false;
+            }
+
+            if (!UIBindingScanner.TryScan(uiWidget, out List<UIBindData> bindings, out errorMessage))
+            {
+                return false;
+            }
+
+            Undo.RecordObject(uiWidget, "Rescan UI Bindings");
+            uiWidget.Bindings.Clear();
+            uiWidget.Bindings.AddRange(bindings);
+            if (string.IsNullOrWhiteSpace(uiWidget.UIName))
+            {
+                uiWidget.UIName = uiWidget.gameObject.name;
+            }
+
+            bindingCount = bindings.Count;
+            EditorUtility.SetDirty(uiWidget);
+            AssetDatabase.SaveAssets();
+            return true;
+        }
+
+        private static string ResolveModuleName(UIWidget uiWidget)
+        {
+            if (!string.IsNullOrWhiteSpace(uiWidget.ModuleName))
+            {
+                return uiWidget.ModuleName;
+            }
+
+            string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                assetPath = AssetDatabase.GetAssetPath(uiWidget.gameObject);
+            }
+
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                return string.Empty;
+            }
+
+            string folderPath = System.IO.Path.GetDirectoryName(assetPath);
+            if (string.IsNullOrWhiteSpace(folderPath))
+            {
+                return string.Empty;
+            }
+
+            folderPath = folderPath.Replace('\\', '/');
+            return System.IO.Path.GetFileName(folderPath);
         }
     }
 }

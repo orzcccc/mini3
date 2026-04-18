@@ -9,10 +9,8 @@ namespace Mini3
     [DisallowMultipleComponent]
     public sealed class UIWidget : MonoBehaviour
     {
-        [SerializeField]
         private string m_ModuleName = "Common";
 
-        [SerializeField]
         private string m_UIName = string.Empty;
 
         [SerializeField]

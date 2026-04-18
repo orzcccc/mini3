@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using TMPro;
 
 namespace Mini3.Editor.UI
 {
@@ -12,6 +13,12 @@ namespace Mini3.Editor.UI
     /// </summary>
     public static class UICodeGenerator
     {
+        public enum UIScriptWriteMode
+        {
+            Create = 0,
+            Update = 1
+        }
+
         private const string UIPathRegistryFile = "Assets/src/Script/UI/Config/UIPathRegistry.Generated.cs";
         private const string UIScriptRoot = "Assets/src/Script/UI";
         private static bool s_IsGeneratingResourceRegistry;
@@ -56,6 +63,11 @@ namespace Mini3.Editor.UI
 
         public static bool GenerateUIScript(UIWidget uiWidget, out string errorMessage)
         {
+            return GenerateUIScript(uiWidget, UIScriptWriteMode.Update, out errorMessage);
+        }
+
+        public static bool GenerateUIScript(UIWidget uiWidget, UIScriptWriteMode writeMode, out string errorMessage)
+        {
             errorMessage = string.Empty;
             if (uiWidget == null)
             {
@@ -68,11 +80,29 @@ namespace Mini3.Editor.UI
                 return false;
             }
 
-            string moduleName = string.IsNullOrWhiteSpace(uiWidget.ModuleName) ? "Common" : uiWidget.ModuleName;
+            string moduleName = ResolveModuleName(uiWidget);
+            if (string.IsNullOrWhiteSpace(moduleName))
+            {
+                errorMessage = $"无法确定 UIWidget 模块名：{uiWidget.name}";
+                return false;
+            }
+
             string uiName = string.IsNullOrWhiteSpace(uiWidget.UIName) ? uiWidget.gameObject.name : uiWidget.UIName;
             bool isView = UIBindingScanner.IsViewName(uiName);
             string targetDirectory = $"{UIScriptRoot}/{moduleName}/{uiName}";
             string targetFilePath = $"{targetDirectory}/{uiName}.cs";
+
+            if (writeMode == UIScriptWriteMode.Create && File.Exists(targetFilePath))
+            {
+                errorMessage = $"UI 脚本已存在：{targetFilePath}";
+                return false;
+            }
+
+            if (writeMode == UIScriptWriteMode.Update && !File.Exists(targetFilePath))
+            {
+                errorMessage = $"UI 脚本不存在，请先创建：{targetFilePath}";
+                return false;
+            }
 
             if (isView)
             {
@@ -122,6 +152,7 @@ namespace Mini3.Editor.UI
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("using UnityEngine;");
             builder.AppendLine("using UnityEngine.UI;");
+            builder.AppendLine("using TMPro;");
             builder.AppendLine();
             builder.AppendFormat("namespace Mini3.UI.{0}", moduleName).AppendLine();
             builder.AppendLine("{");
@@ -291,6 +322,8 @@ namespace Mini3.Editor.UI
                 case UIBindType.Transform:
                     return $"CachedTransform.Find(\"{Escape(binding.RelativePath)}\")";
                 case UIBindType.Text:
+                    return $"FindComponent<TextMeshProUGUI>(\"{Escape(binding.RelativePath)}\")";
+                case UIBindType.OldText:
                     return $"FindComponent<Text>(\"{Escape(binding.RelativePath)}\")";
                 case UIBindType.Image:
                     return $"FindComponent<Image>(\"{Escape(binding.RelativePath)}\")";
@@ -314,6 +347,8 @@ namespace Mini3.Editor.UI
                 case UIBindType.Transform:
                     return "Transform";
                 case UIBindType.Text:
+                    return "TextMeshProUGUI";
+                case UIBindType.OldText:
                     return "Text";
                 case UIBindType.Image:
                     return "Image";
@@ -358,6 +393,34 @@ namespace Mini3.Editor.UI
         private static string Escape(string value)
         {
             return string.IsNullOrEmpty(value) ? string.Empty : value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static string ResolveModuleName(UIWidget uiWidget)
+        {
+            if (!string.IsNullOrWhiteSpace(uiWidget.ModuleName))
+            {
+                return uiWidget.ModuleName;
+            }
+
+            string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(uiWidget.gameObject);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                assetPath = AssetDatabase.GetAssetPath(uiWidget.gameObject);
+            }
+
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                return string.Empty;
+            }
+
+            string folderPath = Path.GetDirectoryName(assetPath);
+            if (string.IsNullOrWhiteSpace(folderPath))
+            {
+                return string.Empty;
+            }
+
+            folderPath = folderPath.Replace('\\', '/');
+            return Path.GetFileName(folderPath);
         }
 
         private static void EnsureDirectory(string assetDirectoryPath)

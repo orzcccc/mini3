@@ -9,6 +9,7 @@ namespace Mini3
     {
         static UIPathRegistry()
         {
+            RegisterPrefab("CommonBackBoxItem", "UIPrefab/CommonPrefabs/CommonBackBoxItem");
             RegisterPrefab("UICanvas", "UIPrefab/CommonPrefabs/UICanvas");
             RegisterImage("Test_ui_carddi01", "Image/icon/card/Test_ui_carddi01");
             RegisterImage("Test_ui_biaotidi01", "Image/icon/kuang/Test_ui_biaotidi01");
