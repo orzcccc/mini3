@@ -1,0 +1,11 @@
+---
+description: Do not use namespace declarations under Assets/src
+alwaysApply: true
+---
+
+# Assets/src 无命名空间规则
+
+- `Assets/src` 目录下的 C# 脚本默认不要声明 `namespace`。
+- 新增或修改 `Assets/src/**/*.cs` 时，优先使用全局类型声明，不要再包裹到 `Mini3`、`Mini3.UI.*`、`Mini3.Editor.*` 等命名空间中。
+- 生成器产出的 `Assets/src` 代码也必须保持无命名空间结构。
+- 若旧代码仍有命名空间，后续修改时应一并清理，避免新旧风格混用。

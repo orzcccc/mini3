@@ -1,92 +1,93 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityGameFramework.Runtime;
 
-namespace Mini3.UI.Common
+public sealed class CommonBackBoxItem : BaseItem
 {
-    public sealed class CommonBackBoxItem : BaseItem
-    {
-        private Image m_bgImg;
-        private Button m_closeBtn;
-        private Image m_titleImg;
-        private TextMeshProUGUI m_titleTxt;
-        private GameObject m_ParentUIRoot;
-        private string m_Title;
+    private Image m_bgImg;
+    private Button m_closeBtn;
+    private Image m_titleImg;
+    private TextMeshProUGUI m_titleTxt;
+    private GameObject m_ParentUIRoot;
+    private string m_Title;
 
-        public CommonBackBoxItem(GameObject root, GameObject parentUIRoot = null) : base(root)
+    public CommonBackBoxItem(GameObject root, GameObject parentUIRoot = null) : base(root)
+    {
+        m_ParentUIRoot = parentUIRoot;
+    }
+
+    protected override void BindComponents()
+    {
+        base.BindComponents();
+        m_bgImg = FindComponent<Image>("bgImg");
+        m_closeBtn = FindComponent<Button>("closeBtn");
+        m_titleImg = FindComponent<Image>("titleImg");
+        m_titleTxt = FindComponent<TextMeshProUGUI>("titleImg/titleTxt");
+        Debug.Log($"CommonBackBoxItem.BindComponents titleTxt = {m_titleTxt != null}, root = {Root?.name ?? "null"}");
+    }
+
+    protected override void BindEvents()
+    {
+        base.BindEvents();
+        if (m_closeBtn != null)
+        {
+            m_closeBtn.onClick.AddListener(OnCloseBtnClick);
+        }
+    }
+
+    protected override void UnbindEvents()
+    {
+        if (m_closeBtn != null)
+        {
+            m_closeBtn.onClick.RemoveListener(OnCloseBtnClick);
+        }
+        base.UnbindEvents();
+    }
+
+    protected override void RefreshView()
+    {
+        base.RefreshView();
+        Debug.Log($"CommonBackBoxItem.RefreshView title = {m_Title ?? "null"}, titleTxt = {m_titleTxt != null}");
+        if (m_titleTxt != null)
+        {
+            m_titleTxt.text = string.IsNullOrEmpty(m_Title) ? string.Empty : m_Title;
+            Debug.Log($"CommonBackBoxItem.RefreshView applied title text = {m_titleTxt.text}");
+        }
+    }
+
+    public void SetData(string title, GameObject parentUIRoot = null)
+    {
+        if (parentUIRoot != null)
         {
             m_ParentUIRoot = parentUIRoot;
         }
 
-        protected override void BindComponents()
+        m_Title = title;
+        Debug.Log($"CommonBackBoxItem.SetData title = {m_Title ?? "null"}, parentUIRoot = {m_ParentUIRoot?.name ?? "null"}");
+        Refresh();
+    }
+
+    public override void SetData(object data)
+    {
+        SetData(data as string);
+    }
+
+    private void OnCloseBtnClick()
+    {
+        GameObject parentUIRoot = m_ParentUIRoot != null ? m_ParentUIRoot : Root;
+        if (parentUIRoot == null)
         {
-            base.BindComponents();
-            m_bgImg = FindComponent<Image>("bgImg");
-            m_closeBtn = FindComponent<Button>("closeBtn");
-            m_titleImg = FindComponent<Image>("titleImg");
-            m_titleTxt = FindComponent<TextMeshProUGUI>("titleImg/titleTxt");
+            return;
         }
 
-        protected override void BindEvents()
+        UIForm uiForm = parentUIRoot.GetComponentInParent<UIForm>();
+        if (uiForm == null)
         {
-            base.BindEvents();
-            if (m_closeBtn != null)
-            {
-                m_closeBtn.onClick.AddListener(OnCloseBtnClick);
-            }
+            Debug.LogWarning($"CommonBackBoxItem close failed, parent UIForm not found. root = {parentUIRoot.name}");
+            return;
         }
 
-        protected override void UnbindEvents()
-        {
-            if (m_closeBtn != null)
-            {
-                m_closeBtn.onClick.RemoveListener(OnCloseBtnClick);
-            }
-            base.UnbindEvents();
-        }
-
-        protected override void RefreshView()
-        {
-            base.RefreshView();
-            if (m_titleTxt != null)
-            {
-                m_titleTxt.text = string.IsNullOrEmpty(m_Title) ? string.Empty : m_Title;
-            }
-        }
-
-        public void SetData(string title, GameObject parentUIRoot = null)
-        {
-            if (parentUIRoot != null)
-            {
-                m_ParentUIRoot = parentUIRoot;
-            }
-
-            m_Title = title;
-            Refresh();
-        }
-
-        public override void SetData(object data)
-        {
-            SetData(data as string);
-        }
-
-        private void OnCloseBtnClick()
-        {
-            GameObject parentUIRoot = m_ParentUIRoot != null ? m_ParentUIRoot : Root;
-            if (parentUIRoot == null)
-            {
-                return;
-            }
-
-            UIForm uiForm = parentUIRoot.GetComponentInParent<UIForm>();
-            if (uiForm == null)
-            {
-                Debug.LogWarning($"CommonBackBoxItem close failed, parent UIForm not found. root = {parentUIRoot.name}");
-                return;
-            }
-
-            UIMgr.inst.Close(uiForm.SerialId);
-        }
+        UIMgr.inst.Close(uiForm.SerialId);
     }
 }
