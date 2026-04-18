@@ -195,7 +195,6 @@ public sealed class UIMgr : Singleton<UIMgr>
         m_SerialIdByUIName[uiName] = ne.UIForm.SerialId;
         m_UINameBySerialId[ne.UIForm.SerialId] = uiName;
         ReparentUIForm(ne.UIForm);
-        Debug.Log($"UIMgr.OnOpenUIFormSuccess uiName = {uiName}, asset = {ne.UIForm.UIFormAssetName}, parent = {ne.UIForm.transform.parent?.name ?? "null"}");
     }
 
     private void OnOpenUIFormFailure(object sender, GameEventArgs e)
@@ -209,7 +208,6 @@ public sealed class UIMgr : Singleton<UIMgr>
         string uiName = ResolveUIName(ne.UIFormAssetName, ne.SerialId);
         m_SerialIdByUIName.Remove(uiName);
         m_UINameBySerialId.Remove(ne.SerialId);
-        Debug.LogWarning($"UIMgr open ui failed. uiName = {uiName}, asset = {ne.UIFormAssetName}, error = {ne.ErrorMessage}");
     }
 
     private void OnCloseUIFormComplete(object sender, GameEventArgs e)
@@ -263,14 +261,12 @@ public sealed class UIMgr : Singleton<UIMgr>
         Transform uiTransform = uiForm.transform;
         if (uiTransform.parent == targetRoot)
         {
-            Debug.Log($"UIMgr.ReparentUIForm skipped, already under {targetRoot.name}. ui = {uiForm.name}");
             return;
         }
 
         uiTransform.SetParent(targetRoot, false);
         uiTransform.localScale = Vector3.one;
         uiTransform.localPosition = Vector3.zero;
-        Debug.Log($"UIMgr.ReparentUIForm ui = {uiForm.name}, logic = {uiForm.Logic?.GetType().Name ?? "null"}, target = {targetRoot.name}");
     }
 
     private Transform GetUIFormLayerRoot(UIForm uiForm)
@@ -340,7 +336,6 @@ public sealed class UIMgr : Singleton<UIMgr>
         GameObject uiCanvasPrefab = ResMgr.inst.LoadPrefab(UICanvasAssetName);
         if (uiCanvasPrefab == null)
         {
-            Debug.LogWarning($"UIMgr init ui canvas failed, prefab not found. assetName = {UICanvasAssetName}");
             return;
         }
 
@@ -352,7 +347,6 @@ public sealed class UIMgr : Singleton<UIMgr>
         m_UIRoot = canvasTransform.Find(UIRootNodeName);
         if (m_UIRoot == null)
         {
-            Debug.LogWarning($"UIMgr init ui canvas failed, node not found. nodeName = {UIRootNodeName}");
             return;
         }
 

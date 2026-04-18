@@ -24,7 +24,6 @@ public sealed class CommonBackBoxItem : BaseItem
         m_closeBtn = FindComponent<Button>("closeBtn");
         m_titleImg = FindComponent<Image>("titleImg");
         m_titleTxt = FindComponent<TextMeshProUGUI>("titleImg/titleTxt");
-        Debug.Log($"CommonBackBoxItem.BindComponents titleTxt = {m_titleTxt != null}, root = {Root?.name ?? "null"}");
     }
 
     protected override void BindEvents()
@@ -48,11 +47,9 @@ public sealed class CommonBackBoxItem : BaseItem
     protected override void RefreshView()
     {
         base.RefreshView();
-        Debug.Log($"CommonBackBoxItem.RefreshView title = {m_Title ?? "null"}, titleTxt = {m_titleTxt != null}");
         if (m_titleTxt != null)
         {
             m_titleTxt.text = string.IsNullOrEmpty(m_Title) ? string.Empty : m_Title;
-            Debug.Log($"CommonBackBoxItem.RefreshView applied title text = {m_titleTxt.text}");
         }
     }
 
@@ -64,7 +61,6 @@ public sealed class CommonBackBoxItem : BaseItem
         }
 
         m_Title = title;
-        Debug.Log($"CommonBackBoxItem.SetData title = {m_Title ?? "null"}, parentUIRoot = {m_ParentUIRoot?.name ?? "null"}");
         Refresh();
     }
 
@@ -84,7 +80,6 @@ public sealed class CommonBackBoxItem : BaseItem
         UIForm uiForm = parentUIRoot.GetComponentInParent<UIForm>();
         if (uiForm == null)
         {
-            Debug.LogWarning($"CommonBackBoxItem close failed, parent UIForm not found. root = {parentUIRoot.name}");
             return;
         }
 

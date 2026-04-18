@@ -1,0 +1,17 @@
+---
+description: Respect UI lifecycle and initialize items during init
+alwaysApply: true
+---
+
+# UI 生命周期规范
+
+- 编写 `BaseUI`、`BaseItem` 相关代码时要严格区分初始化、绑定、打开、关闭、销毁几个生命周期阶段。
+- `Init` / `BindComponents` 阶段负责组件查找、Item 创建、引用缓存等一次性初始化工作。
+- `BindEvents` / `UnbindEvents` 只负责事件注册与事件解绑，不要在这里创建、销毁或置空长期复用的 Item/组件引用。
+- 反复打开关闭的 UI 中，`Item` 默认应在初始化阶段创建并复用，避免在关闭时销毁导致下次打开缺失引用或事件未重新绑定。
+- 只有在真正的销毁阶段，例如 `Destroy`、`OnRecycle`、`Dispose` 的最终释放路径里，才处理需要彻底释放的对象引用。
+
+# 示例
+
+- 推荐：在 `Init` 或 `BindComponents` 中创建 `CommonBackBoxItem`
+- 不推荐：在 `UnbindEvents` 中 `Dispose` 后再将 `Item` 置空

@@ -54,7 +54,6 @@ public abstract class BaseModel
 
     protected void LogLifecycle(string stage)
     {
-        Debug.Log($"Model Lifecycle => {GetType().Name}.{stage}");
     }
 
     protected virtual void OnRegister()

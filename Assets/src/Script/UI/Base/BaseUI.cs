@@ -8,7 +8,6 @@ public abstract class BaseUI : UIFormLogic
 {
     private bool m_IsBound;
     private object m_OpenUserData;
-    private bool m_IsDestroyed;
 
     public string UIName => UIForm != null ? UIForm.UIFormAssetName : gameObject.name;
 
@@ -50,12 +49,6 @@ public abstract class BaseUI : UIFormLogic
 
     protected sealed override void OnRecycle()
     {
-        if (!m_IsDestroyed)
-        {
-            m_IsDestroyed = true;
-            Destroy();
-        }
-
         base.OnRecycle();
     }
 
@@ -92,7 +85,6 @@ public abstract class BaseUI : UIFormLogic
         Transform target = CachedTransform.Find(relativePath);
         if (target == null)
         {
-            Debug.LogWarning($"BaseUI.FindComponent failed, path = {relativePath}, ui = {UIName}");
             return null;
         }
 

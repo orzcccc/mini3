@@ -53,7 +53,6 @@ public abstract class BaseItem
         Transform target = CachedTransform.Find(relativePath);
         if (target == null)
         {
-            Debug.LogWarning($"BaseItem.FindComponent failed, path = {relativePath}, root = {Root?.name}");
             return null;
         }
 

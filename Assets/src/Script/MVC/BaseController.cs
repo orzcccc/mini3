@@ -54,7 +54,6 @@ public abstract class BaseController
 
     protected void LogLifecycle(string stage)
     {
-        Debug.Log($"Controller Lifecycle => {GetType().Name}.{stage}");
     }
 
     protected virtual void OnRegister()
