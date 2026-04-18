@@ -14,6 +14,37 @@ public sealed class GameLauncher : MonoBehaviour
         Launch();
     }
 
+    private void Update()
+    {
+        if (!m_Launched)
+        {
+            return;
+        }
+
+        MVCManager.inst.Update(Time.deltaTime);
+    }
+
+    private void LateUpdate()
+    {
+        if (!m_Launched)
+        {
+            return;
+        }
+
+        MVCManager.inst.LateUpdate(Time.deltaTime);
+    }
+
+    private void OnDestroy()
+    {
+        if (!m_Launched)
+        {
+            return;
+        }
+
+        MVCManager.inst.Shutdown();
+        m_Launched = false;
+    }
+
     public void Launch()
     {
         if (m_Launched)
@@ -65,13 +96,20 @@ public sealed class GameLauncher : MonoBehaviour
         int loadedTableCount = TableMgr.inst.LoadAll();
         EventMgr.inst.SetDefaultHandler(OnDefaultGameEvent);
         ResMgr.inst.RebuildRegistry();
+        _ = MVCManager.inst;
         Debug.Log($"GameLauncher 初始化完成，已加载数据表数量: {loadedTableCount}");
     }
 
     private static void InitGameModules()
     {
+        RegisterMVCModules();
+        MVCManager.inst.Init();
         _ = UIMgr.inst;
         UIMgr.inst.Open("MainCardView");
+    }
+
+    private static void RegisterMVCModules()
+    {
     }
 
     private static void OnDefaultGameEvent(object sender, GameEventArgs e)
