@@ -1,0 +1,18 @@
+---
+description: Keep logs in framework layer unless explicitly requested
+alwaysApply: true
+---
+
+# 日志分层规范
+
+- 除非用户明确要求添加打印，否则默认只在框架层、基础设施层、公共入口层添加日志。
+- 业务逻辑层默认不要主动添加 `Debug.Log`、`Debug.LogWarning`、`Debug.LogError` 等打印。
+- 这里的框架层包括启动入口、底层管理器、资源加载、事件系统、UI 框架封装等通用基础设施。
+- 这里的业务逻辑层包括具体玩法、界面业务、战斗逻辑、卡牌逻辑、养成逻辑、具体功能流程等。
+- 如果需要定位业务问题，优先通过返回值、状态流转、断点和更上层统一日志定位；不要在具体业务方法里随手加打印。
+- 只有在用户明确指定“这里要加日志/打印”时，才允许在业务层添加对应日志。
+
+# 示例
+
+- 允许：`GameLauncher`、`UIMgr`、`ResMgr`、`EventMgr` 中的框架级日志
+- 不建议：`MainCardView`、战斗结算、卡牌效果、养成处理等具体业务逻辑中的临时日志

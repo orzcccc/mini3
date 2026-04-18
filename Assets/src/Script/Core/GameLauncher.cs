@@ -21,6 +21,7 @@ public sealed class GameLauncher : MonoBehaviour
             return;
         }
 
+        KeyboardMgr.inst.Update();
         MVCManager.inst.Update(Time.deltaTime);
     }
 
@@ -96,6 +97,7 @@ public sealed class GameLauncher : MonoBehaviour
         int loadedTableCount = TableMgr.inst.LoadAll();
         EventMgr.inst.SetDefaultHandler(OnDefaultGameEvent);
         ResMgr.inst.RebuildRegistry();
+        _ = KeyboardMgr.inst;
         _ = MVCManager.inst;
         Debug.Log($"GameLauncher 初始化完成，已加载数据表数量: {loadedTableCount}");
     }
