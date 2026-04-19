@@ -74,10 +74,16 @@ public sealed class KeyboardMgr : Singleton<KeyboardMgr>
     private void RegisterDefaultDebugShortcuts()
     {
         RegisterKeyDown(KeyCode.F2, OpenGMView);
+        RegisterKeyDown(KeyCode.F3, StartBattle);
     }
 
     private static void OpenGMView()
     {
         UIMgr.inst.Open("GMView");
+    }
+
+    private static void StartBattle()
+    {
+        BattleMgr.inst.StartBattle();
     }
 }

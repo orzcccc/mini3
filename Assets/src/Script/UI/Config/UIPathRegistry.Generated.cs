@@ -9,6 +9,7 @@ public static partial class UIPathRegistry
     {
         RegisterPrefab("GMView", "UIPrefab/Card/GMView");
         RegisterPrefab("MainCardView", "UIPrefab/Card/MainCardView");
+        RegisterPrefab("battleRoot", "UIPrefab/CommonPrefabs/battleRoot");
         RegisterPrefab("CommonBackBoxItem", "UIPrefab/CommonPrefabs/CommonBackBoxItem");
         RegisterPrefab("UICanvas", "UIPrefab/CommonPrefabs/UICanvas");
         RegisterImage("test_battle_bg", "Image/icon/battle/test_battle_bg");
