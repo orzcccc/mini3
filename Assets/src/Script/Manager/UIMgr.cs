@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GameFramework.Event;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityGameFramework.Runtime;
 
 /// <summary>
@@ -10,7 +9,7 @@ using UnityGameFramework.Runtime;
 /// </summary>
 public sealed class UIMgr : Singleton<UIMgr>
 {
-    private const string UICanvasAssetName = "UICanvas";
+    private const string UICanvasObjectName = "UICanvas";
     private const string UIRootNodeName = "UIRoot";
     private const string LowLayerNodeName = "LowLayer";
     private const string MainLayerNodeName = "MainLayer";
@@ -340,21 +339,20 @@ public sealed class UIMgr : Singleton<UIMgr>
             return;
         }
 
-        GameObject uiCanvasPrefab = ResMgr.inst.LoadPrefab(UICanvasAssetName);
-        if (uiCanvasPrefab == null)
+        GameObject uiCanvasObject = GameObject.Find(UICanvasObjectName);
+        if (uiCanvasObject == null)
         {
+            Log.Error("Scene UICanvas is not found. Please place a GameObject named 'UICanvas' in the scene.");
             return;
         }
 
-        m_UICanvasInstance = UnityEngine.Object.Instantiate(uiCanvasPrefab);
-        m_UICanvasInstance.name = uiCanvasPrefab.name;
-        UnityEngine.Object.DontDestroyOnLoad(m_UICanvasInstance);
-        BindUICamera(m_UICanvasInstance);
+        m_UICanvasInstance = uiCanvasObject;
 
         Transform canvasTransform = m_UICanvasInstance.transform;
         m_UIRoot = canvasTransform.Find(UIRootNodeName);
         if (m_UIRoot == null)
         {
+            Log.Error("UIRoot is not found under scene UICanvas.");
             return;
         }
 
@@ -363,36 +361,6 @@ public sealed class UIMgr : Singleton<UIMgr>
         m_MiddleLayer = m_UIRoot.Find(MiddleLayerNodeName);
         m_HighLayer = m_UIRoot.Find(HighLayerNodeName);
         m_TopLayer = m_UIRoot.Find(TopLayerNodeName);
-    }
-
-    private static void BindUICamera(GameObject uiCanvasInstance)
-    {
-        if (uiCanvasInstance == null)
-        {
-            return;
-        }
-
-        Canvas canvas = uiCanvasInstance.GetComponent<Canvas>();
-        if (canvas == null || canvas.renderMode != RenderMode.ScreenSpaceCamera)
-        {
-            return;
-        }
-
-        GameObject uiCameraObject = GameObject.Find("UICamera");
-        if (uiCameraObject == null)
-        {
-            Log.Warning("UICanvas is in ScreenSpaceCamera mode, but no GameObject named 'UICamera' was found in the scene.");
-            return;
-        }
-
-        Camera uiCamera = uiCameraObject.GetComponent<Camera>();
-        if (uiCamera == null)
-        {
-            Log.Warning("GameObject 'UICamera' was found, but it does not contain a Camera component.");
-            return;
-        }
-
-        canvas.worldCamera = uiCamera;
     }
 
     private static UIComponent GetUIComponent()
