@@ -11,6 +11,7 @@ public static partial class UIPathRegistry
         RegisterPrefab("MainCardView", "UIPrefab/Card/MainCardView");
         RegisterPrefab("CommonBackBoxItem", "UIPrefab/CommonPrefabs/CommonBackBoxItem");
         RegisterPrefab("UICanvas", "UIPrefab/CommonPrefabs/UICanvas");
+        RegisterImage("test_battle_bg", "Image/icon/battle/test_battle_bg");
         RegisterImage("Test_ui_carddi01", "Image/icon/card/Test_ui_carddi01");
         RegisterImage("Test_ui_biaotidi01", "Image/icon/kuang/Test_ui_biaotidi01");
         RegisterImage("Test_ui_biaotidi02", "Image/icon/kuang/Test_ui_biaotidi02");
