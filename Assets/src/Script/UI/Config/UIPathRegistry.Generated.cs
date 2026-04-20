@@ -27,6 +27,8 @@ public static partial class UIPathRegistry
         RegisterImage("Test_ui_wuqi_gon01", "Image/icon/battle/Test_ui_wuqi_gon01");
         RegisterImage("Test_ui_wuqi_jian01", "Image/icon/battle/Test_ui_wuqi_jian01");
         RegisterImage("Test_ui_wuqi_shipin01", "Image/icon/battle/Test_ui_wuqi_shipin01");
+        RegisterImage("shuxing01", "Image/icon/card/shuxing01");
+        RegisterImage("shuxing02", "Image/icon/card/shuxing02");
         RegisterImage("Test_ui_card01", "Image/icon/card/Test_ui_card01");
         RegisterImage("Test_ui_card02", "Image/icon/card/Test_ui_card02");
         RegisterImage("Test_ui_card03", "Image/icon/card/Test_ui_card03");
